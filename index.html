@@ -1,0 +1,93 @@
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>GPS Tracker Map with Firebase</title>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+  <!-- Leaflet CSS -->
+  <link 
+    rel="stylesheet" 
+    href="https://unpkg.com/leaflet@1.7.1/dist/leaflet.css" 
+  />
+  <style>
+    #map {
+      height: 100vh;
+    }
+  </style>
+</head>
+<body>
+  <div id="map"></div>
+
+  <!-- Leaflet JS -->
+  <script src="https://unpkg.com/leaflet@1.7.1/dist/leaflet.js"></script>
+
+  <!-- Firebase SDKs -->
+  <script type="module">
+    // Firebase imports
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-app.js";
+    import { getDatabase, ref, onValue } from "https://www.gstatic.com/firebasejs/10.11.0/firebase-database.js";
+
+    // Your Firebase config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDywKOi6igQ2ZMstjLT66zaAhx1qSPQr7Q",
+      authDomain: "gpsdio.firebaseapp.com",
+      databaseURL: "https://gpsdio-default-rtdb.asia-southeast1.firebasedatabase.app",
+      projectId: "gpsdio",
+      storageBucket: "gpsdio.firebasestorage.app",
+      messagingSenderId: "602030471377",
+      appId: "1:602030471377:web:02b59a31e0a57cf87eedf0"
+    };
+
+    // Initialize Firebase
+    const app = initializeApp(firebaseConfig);
+    const db = getDatabase(app);
+
+    // Initialize map
+    const map = L.map('map').setView([-8.4095, 115.1889], 13); // Default location
+
+    // Add OSM layer
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 18
+    }).addTo(map);
+
+    let marker; // Placeholder for the marker
+
+    // Get data from Firebase
+    const gpsRef = ref(db, 'GPS_Data');
+    onValue(gpsRef, (snapshot) => {
+      const data = snapshot.val();
+      if (data) {
+        const lat = data.Latitude || 0;
+        const lng = data.Longitude || 0;
+        const suhu = data.Temperature || 0;
+        const kelembaban = data.Humidity || 0;
+        const waktu = data.Time || '-';
+        const speed = data.Speed || 0;
+        const arah = data.Course || 0;
+
+        // If marker already exists, remove it
+        if (marker) {
+          map.removeLayer(marker);
+        }
+
+        // Create a new marker
+        marker = L.marker([lat, lng]).addTo(map);
+        marker.bindPopup(
+          `<b>📍 Lokasi:</b><br>
+          Latitude: ${lat}<br>
+          Longitude: ${lng}<br>
+          <b>🌡️ Suhu:</b> ${suhu}°C<br>
+          <b>💧 Kelembaban:</b> ${kelembaban}%<br>
+          <b>⏰ Waktu:</b> ${waktu}<br>
+          <b>🚗 Kecepatan:</b> ${speed} km/h<br>
+          <b>🧭 Arah:</b> ${arah}°`
+        ).openPopup();
+
+        map.setView([lat, lng], 16); // Fokus ke lokasi terbaru
+      }
+    });
+  </script>
+</body>
+</html>
